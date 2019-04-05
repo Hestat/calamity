@@ -1,0 +1,165 @@
+#!/bin/bash
+
+#echo "Hello World"
+
+vol=/opt/calamity/volatility/vol.py
+
+mkdir /tmp/caltmp 2>/dev/null
+
+pslog=/tmp/caltmp/pslist.log
+netlog=/tmp/caltmp/netscan.log
+
+rm /tmp/caltmp/*
+
+###############################setup##################################
+#choose y/N
+yesno(){ read -p "$question " choice;case "$choice" in y|Y|yes|Yes|YES ) decision=1;; n|N|no|No|NO ) decision=0;; * ) echo "invalid" && yesno; esac; }
+
+
+######################   create formatting #################################
+#Creates variable for red color
+red='\e[0;31m'
+#Creates variable for bold red color
+redbold='\e[1;31m'
+#Creates variable for green color
+green='\e[0;32m'
+#Creates variable for yellow color
+yellow='\e[1;33m'
+#Creates variable for purple color
+purple='\e[1;35m'
+#Creates variable for no color
+whi='\e[0m'
+#blue
+blue='\e[34m'
+
+div(){
+  for ((i=0;i<$1;i++)); do printf '='; done;
+}
+
+header(){
+	echo -e "\n$(div 80)\n"
+}
+
+header2=$(echo -e "$(div 3)")
+
+########################################################################
+
+vol-mal(){
+	python $vol --profile=$pickedprofile -f $inspect malfind -D $casefolder2/malfind
+}
+
+vol-sys(){
+	python $vol --profile=$pickedprofile -f $inspect moddump -D $casefolder2/moddump
+}
+
+vol-dll(){
+	python $vol --profile=$pickedprofile -f $inspect dlldump -D $casefolder2/dlldump
+}
+
+clam(){
+	clamscan -ir $casefolder2/ | tee -a $casefolder2/clamavresults.log
+}
+
+lokiscan(){
+	python /opt/calamity/Loki/loki.py --dontwait -l $casefolder2/lokiresults.log -p $casefolder2
+}
+
+########################################################################
+echo -e "$yellow What is the path to the image to inspect? $whi\n"
+read inspect
+
+python $vol -f $inspect imageinfo --output-file=/tmp/caltmp/imageinfo.log 2>/dev/null
+
+firstpass(){
+	echo -e "\n$yellow Please pick the profile you would like to apply to this investigation\n $whi"
+	grep Suggested /tmp/caltmp/imageinfo.log
+	echo -e
+	read pickedprofile
+
+	echo -e "$yellow\n===Preparing to perform investigation===\n$whi"
+	python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
+
+	python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
+}
+
+firstpass
+
+confirmpass(){
+	echo -e "\n$yellow Please review the output from the Running Processes and Network connections to see if profile is correct. \n$whi"
+	read -p "Press enter to continue"
+	less $pslog
+	less $netlog
+}
+
+confirmpass
+
+echo -e "$yellow Does this output look correct? [y/n]"
+
+yesno; if [ $decision = 1 ];then
+	echo -e "$green Continuing to dump files from memory\n $whi"
+else
+	rm $pslog
+	rm $netlog
+	firstpass
+	confirmpass
+	echo -e "\n$yellow Does this output look correct? [y/n]"
+	yesno; if [ $decision = 1 ]; then
+		echo -e "$green Continuing to dump files from memory $whi\n"
+		else
+			rm $pslog
+			rm $netlog
+			firstpass
+			confirmpass
+			echo -e "$yellow Does this output look correct? [y/n]"
+			yesno; if [ $decision = 1 ]; then
+			echo -e "$green Continuing to dump files from memory $whi"
+			else
+			echo -e "$red Three strikes and you're out please try again $whi"
+			exit 0
+			fi
+	fi
+fi
+
+echo -e "Create a case file, this folder will be created in the user home dir"
+read casefolder
+
+mkdir -p $HOME/$casefolder
+
+casefolder2=$HOME/$casefolder
+
+echo -e "$casefolder2"
+
+echo -e "Would you like to perform a quickscan for malicious content? [y/n]"
+yesno; if [ $decision = 1 ]; then
+	mkdir $casefolder2/malfind
+	vol-mal
+	echo -e "$yellow\nMalfind command complete scanning contents...$whi"
+	clamscan -ir $casefolder2/malfind | tee -a $casefolder2/clamavresults.log
+	lokiscan
+	exit 0
+else
+	echo -e "Skipping quickscan"
+fi
+
+echo -e "$red\nWould you like to perform comprehensive scan?"
+yesno; if [ $decision = 1 ];then
+	#check for diskspace
+	diskcheck=$(df $HOME | awk '{print$4}' | tail -n1)
+	imagecheck=$(du -sx $inspect)
+	if [ $imagecheck > $diskcheck ];then
+	       echo -e "$red\nNot enough disk space to dump files from image, please clear disk space before completing this action $whi"
+	       exit 0
+       else
+	       mkdir $casefolder2/malfind
+	       mkdir $casefolder2/dlldump
+	       mkdir $casefolder2/moddump
+		vol-mal
+		vol-dll
+		vol-sys
+		echo -e "$yellow File dumps from image complete, starting scan"
+		clam
+	fi
+else
+	echo -e "$red\nExiting..."
+	exit 0
+fi
