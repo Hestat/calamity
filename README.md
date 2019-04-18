@@ -23,3 +23,11 @@
  
  ================================================================================
 ```
+
+Original inspiration to Volatility Labs writeup in this article:
+https://volatility-labs.blogspot.com/2016/08/automating-detection-of-known-malware.html
+
+Which led me to write up my version:
+https://laskowski-tech.com/2019/02/18/volatility-workflow-for-basic-incident-response/
+
+Which led to this project. Good Hunting.
