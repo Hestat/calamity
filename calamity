@@ -9,7 +9,7 @@ mkdir /tmp/caltmp 2>/dev/null
 pslog=/tmp/caltmp/pslist.log
 netlog=/tmp/caltmp/netscan.log
 
-rm /tmp/caltmp/*
+rm /tmp/caltmp/* 2>/dev/null
 
 ###############################setup##################################
 #choose y/N
@@ -44,57 +44,22 @@ header2=$(echo -e "$(div 3)")
 
 ########################################################################
 
-vol-mal(){
-	python $vol --profile=$pickedprofile -f $inspect malfind -D $casefolder2/malfind
-}
-
-vol-sys(){
-	python $vol --profile=$pickedprofile -f $inspect moddump -D $casefolder2/moddump
-}
-
-vol-dll(){
-	python $vol --profile=$pickedprofile -f $inspect dlldump -D $casefolder2/dlldump
-}
-
-clam(){
-	clamscan -ir $casefolder2/ | tee -a $casefolder2/clamavresults.log
-}
-
-lokiscan(){
-	python /opt/calamity/Loki/loki.py --dontwait -l $casefolder2/lokiresults.log -p $casefolder2
+helpmenu(){
+	header
+	echo -e "      =========================$red Calamity $whi=========================$whi"
+	echo -e "$green\nA script to assist in processing forensic RAM captures for$red malware triage$whi\n"
+	echo -e "Run the script with no options and it will run in guided mode prompting the\nuser to choose options as required"
+	echo -e "\nIf you already know the correct volatility memory profile you can use the\nfollowing options"
+	echo -e " -f --filepath provide the complete filepath to the RAM memory dump"
+	echo -e " -p --profile provide the memory provile you want volatility to use"
+	echo -e " -s --scan will run all scans and prompt user as required"
+	echo -e "\nExample:\ncalamity -f /home/user/memory.dmp -p Win10x64_10586 -s"
+	echo -e "\ncalamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan"
+	header
 }
 
 ########################################################################
-echo -e "$yellow What is the path to the image to inspect? $whi\n"
-read inspect
-
-python $vol -f $inspect imageinfo --output-file=/tmp/caltmp/imageinfo.log 2>/dev/null
-
-firstpass(){
-	echo -e "\n$yellow Please pick the profile you would like to apply to this investigation\n $whi"
-	grep Suggested /tmp/caltmp/imageinfo.log
-	echo -e
-	read pickedprofile
-
-	echo -e "$yellow\n===Preparing to perform investigation===\n$whi"
-	python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
-
-	python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
-}
-
-firstpass
-
-confirmpass(){
-	echo -e "\n$yellow Please review the output from the Running Processes and Network connections to see if profile is correct. \n$whi"
-	read -p "Press enter to continue"
-	less $pslog
-	less $netlog
-}
-
-confirmpass
-
-echo -e "$yellow Does this output look correct? [y/n]"
-
+main(){
 yesno; if [ $decision = 1 ];then
 	echo -e "$green Continuing to dump files from memory\n $whi"
 else
@@ -131,17 +96,19 @@ echo -e "$casefolder2"
 
 echo -e "Would you like to perform a quickscan for malicious content? [y/n]"
 yesno; if [ $decision = 1 ]; then
+	mvlive
 	mkdir $casefolder2/malfind
 	vol-mal
 	echo -e "$yellow\nMalfind command complete scanning contents...$whi"
-	clamscan -ir $casefolder2/malfind | tee -a $casefolder2/clamavresults.log
+	clam
 	lokiscan
+	processresults
 	exit 0
 else
 	echo -e "Skipping quickscan"
 fi
 
-echo -e "$red\nWould you like to perform comprehensive scan?"
+echo -e "$red\nWould you like to perform comprehensive scan? This can take a long time 1-8 hours [y/n]"
 yesno; if [ $decision = 1 ];then
 	#check for diskspace
 	diskcheck=$(df $HOME | awk '{print$4}' | tail -n1)
@@ -150,6 +117,7 @@ yesno; if [ $decision = 1 ];then
 	       echo -e "$red\nNot enough disk space to dump files from image, please clear disk space before completing this action $whi"
 	       exit 0
        else
+	       mvlive
 	       mkdir $casefolder2/malfind
 	       mkdir $casefolder2/dlldump
 	       mkdir $casefolder2/moddump
@@ -158,8 +126,141 @@ yesno; if [ $decision = 1 ];then
 		vol-sys
 		echo -e "$yellow File dumps from image complete, starting scan"
 		clam
+		lokiscan
+		processresults
 	fi
 else
 	echo -e "$red\nExiting..."
 	exit 0
 fi
+}
+
+
+vol-mal(){
+	python $vol --profile=$pickedprofile -f $inspect malfind -D $casefolder2/malfind
+}
+
+vol-sys(){
+	python $vol --profile=$pickedprofile -f $inspect moddump -D $casefolder2/moddump
+}
+
+vol-dll(){
+	python $vol --profile=$pickedprofile -f $inspect dlldump -D $casefolder2/dlldump
+}
+
+clam(){
+	clamscan -ir --no-summary $casefolder2/ | tee -a $casefolder2/clamavresults.log
+}
+
+lokiscan(){
+	python /opt/calamity/Loki/loki.py --dontwait -l $casefolder2/lokiresults.log -p $casefolder2
+}
+
+mvlive(){
+	cp -av $pslog $casefolder2/
+	cp -av $netlog $casefolder2/
+}
+
+processresults(){
+	pushd $casefolder2
+	touch calamity.log
+	header >> calamity.log
+	echo -e "memory impected using the following profile: $pickedprofile" >> calamity.log
+	echo -e "$yellow===ClamAV results===$whi" | tee -a calamity.log
+	cat clamavresults.log | tee -a calamity.log
+	for i in $(cat clamavresults.log | cut -d . -f2 | uniq); do grep $i pslist.log >> $casefolder2/clamprocs.log;done
+	echo -e "$red===Identified Malicious Processes===$whi" |tee -a calamity.log
+	cat clamprocs.log | tee -a calamity.log
+	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
+	for i in $(awk '{print$3}' clamprocs.log); do grep $i netscan.log | tee -a calamity.log;done
+	echo -e "$yellow===Loki Results===$whi" | tee -a calamity.log
+	grep FileScan lokiresults.log | tee -a calamity.log
+	for i in $(grep FileScan lokiresults.log | cut -d . -f2); do grep $i pslist.log >> lokiprocs.log;done
+	echo -e "$red===Identified Malicious Processes===$whi" | tee -a calamity.log
+	cat lokiprocs.log | tee -a calamity.log
+	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
+	for i in $(awk '{print$3}' lokiprocs.log); do grep $i netscan.log | tee -a calamity.log;done
+	header >> calamity.log
+	popd
+}
+
+########################################################################
+#Advanced mode
+########################################################################
+#while getopts "h:q:" opt; do
+#	case ${opt} in
+#		h ) #provide the help menu
+#			helpmenu
+#			exit 0;;
+#		q ) #provide the required
+#		       echo -e "it worked"	
+#			exit 0;;
+
+#	        \? ) echo "Usage: cmd -h [Use to get a full list of the features and flags]"
+#	    exit 0;;
+#   esac
+#done
+
+# read the options
+TEMP=`getopt -o f:p:s:c::h:: --long filepath:,profile:,scan::,complete::,help:: -- "$@"`
+
+eval set -- "$TEMP"
+
+while true; do
+	case "$1" in
+		-h|--help)
+			helpmenu
+			exit 0;;
+		-f|--filepath)
+			inspect=$2; shift 2;;
+		-p|--profile)
+			pickedprofile=$2; shift 2;;
+		-s|--scan)
+			python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
+			python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
+			echo -e "$yellow\nParameters Entered would you like to continue? [y/n]"
+			main
+			exit 0;;
+
+		* ) break;;
+	esac
+done
+
+
+
+
+
+########################################################################
+#Walk Through mode
+########################################################################
+echo -e "$yellow What is the path to the image to inspect? $whi\n"
+read inspect
+
+python $vol -f $inspect imageinfo --output-file=/tmp/caltmp/imageinfo.log 2>/dev/null
+
+firstpass(){
+	echo -e "\n$yellow Please pick the profile you would like to apply to this investigation\n $whi"
+	grep Suggested /tmp/caltmp/imageinfo.log
+	echo -e
+	read pickedprofile
+
+	echo -e "$yellow\n===Preparing to perform investigation===\n$whi"
+	python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
+
+	python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
+}
+
+firstpass
+
+confirmpass(){
+	echo -e "\n$yellow Please review the output from the Running Processes and Network connections to see if profile is correct. \n$whi"
+	read -p "Press enter to continue"
+	less $pslog
+	less $netlog
+}
+
+confirmpass
+
+echo -e "$yellow Does this output look correct? [y/n]"
+
+main

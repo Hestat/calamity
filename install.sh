@@ -51,7 +51,7 @@ lokiinstall(){
 lokiupdate(){
 	pushd /opt/calamity/Loki
 	git pull
-	python /opt/calamity/Loki/loki-upgrader.py
+	#python /opt/calamity/Loki/loki-upgrader.py
 	popd
 }
 	
