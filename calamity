@@ -202,7 +202,7 @@ processresults(){
 #done
 
 # read the options
-TEMP=`getopt -o f:p:s:c::h:: --long filepath:,profile:,scan::,complete::,help:: -- "$@"`
+TEMP=`getopt -o f:p:s::q::h:: --long filepath:,profile:,scan::,quick::,help:: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -220,6 +220,21 @@ while true; do
 			python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
 			echo -e "$yellow\nParameters Entered would you like to continue? [y/n]"
 			main
+			exit 0;;
+		-q|--quick)
+			python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
+			python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
+			casefolder=calamity-quickscan$(date +%y%m%d-%H%M)
+			mkdir -p $HOME/$casefolder
+			casefolder2=$HOME/$casefolder
+			echo -e "$yellow\nWriting logs to $casefolder2...$whi"
+			mvlive
+			mkdir $casefolder2/malfind
+			vol-mal
+			echo -e "$yellow\nMalfind command complete scanning contents...$whi"
+			clam
+			lokiscan
+			processresults
 			exit 0;;
 
 		* ) break;;
