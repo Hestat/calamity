@@ -142,7 +142,7 @@ vol-mal(){
 }
 
 vol-confscan(){
-	for pid in $(grep Pid $casefolder2/malfind.log | awk '{print$4}'); do python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
+	for pid in $(grep Pid $casefolder2/malfind.log | grep -v MsMpEng.exe |awk '{print$4}'| sort | uniq); do python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
 }
 
 vol-sys(){
