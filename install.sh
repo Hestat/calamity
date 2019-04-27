@@ -54,6 +54,25 @@ lokiupdate(){
 	python /opt/calamity/Loki/loki-upgrader.py
 	popd
 }
+
+###Malconfscan plugin###
+malconfinstall(){
+	pushd /opt/calamity
+	git clone https://github.com/JPCERTCC/MalConfScan.git
+	pip install -r MalConfScan/requirements.txt
+	cp MalConfScan/malconfscan.py /opt/calamity/volatility/volatility/plugins/malware/
+	cp -R MalConfScan/yara /opt/calamity/volatility/volatility/plugins/malware/
+	cp -R MalConfScan/utils /opt/calamity/volatility/volatility/plugins/malware/
+	popd
+}
+malconfupdate(){
+	pushd /opt/calamity/MalConfScan
+	git pull
+	cp malconfscan.py /opt/calamity/volatility/volatility/plugins/malware/
+	cp -R yara /opt/calamity/volatility/volatility/plugins/malware/
+	cp -R utils /opt/calamity/volatility/volatility/plugins/malware/
+	popd
+}
 	
 
 
@@ -73,11 +92,19 @@ else
 fi
 
 if [[ -e /opt/calamity/Loki ]]; then #Loki installed run update
-	echo -e "$green Loki install running update $whi"
+	echo -e "$green Loki installed running update $whi"
 	lokiupdate
 else
 	echo -e "$yellow Loki not found installing $whi"
 	lokiinstall
+fi
+
+if [[ -e /opt/calamity/MalConfScan ]];then #malconfscan installed run updates
+	echo -e "$green MalConfScan installed running updates$whi"
+	malconfupdate
+else
+	echo -e "$yellow MalConfScan not found installing...$whi"
+	malconfinstall
 fi
 
 cp -av calamity /opt/calamity/calamity

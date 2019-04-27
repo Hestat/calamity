@@ -53,6 +53,7 @@ helpmenu(){
 	echo -e " -f --filepath provide the complete filepath to the RAM memory dump"
 	echo -e " -p --profile provide the memory provile you want volatility to use"
 	echo -e " -s --scan will run all scans and prompt user as required"
+	echo -e " -q --quick will run a quick scan for malware, no user input required to complete"
 	echo -e "\nExample:\ncalamity -f /home/user/memory.dmp -p Win10x64_10586 -s"
 	echo -e "\ncalamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan"
 	header
@@ -137,7 +138,11 @@ fi
 
 
 vol-mal(){
-	python $vol --profile=$pickedprofile -f $inspect malfind -D $casefolder2/malfind
+	python $vol --profile=$pickedprofile -f $inspect malfind -D $casefolder2/malfind --output-file=$casefolder2/malfind.log
+}
+
+vol-confscan(){
+	for pid in $(grep Pid $casefolder2/malfind.log | awk '{print$4}'); do python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
 }
 
 vol-sys(){
@@ -181,25 +186,13 @@ processresults(){
 	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
 	for i in $(awk '{print$3}' lokiprocs.log); do grep $i netscan.log | tee -a calamity.log;done
 	header >> calamity.log
+	vol-confscan
 	popd
 }
 
 ########################################################################
 #Advanced mode
 ########################################################################
-#while getopts "h:q:" opt; do
-#	case ${opt} in
-#		h ) #provide the help menu
-#			helpmenu
-#			exit 0;;
-#		q ) #provide the required
-#		       echo -e "it worked"	
-#			exit 0;;
-
-#	        \? ) echo "Usage: cmd -h [Use to get a full list of the features and flags]"
-#	    exit 0;;
-#   esac
-#done
 
 # read the options
 TEMP=`getopt -o f:p:s::q::h:: --long filepath:,profile:,scan::,quick::,help:: -- "$@"`
