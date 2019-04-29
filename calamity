@@ -142,7 +142,7 @@ vol-mal(){
 }
 
 vol-confscan(){
-	for pid in $(grep Pid $casefolder2/malfind.log | egrep -v "MsMpEng.exe|smartscreen|mmc.exe" |awk '{print$4}'| sort | uniq); do python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
+	for pid in $(grep Pid $casefolder2/malfind.log | egrep -v "MsMpEng.exe|smartscreen|mmc.exe" |awk '{print$4}'| sort | uniq); do timeout 300 python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
 }
 
 vol-sys(){
