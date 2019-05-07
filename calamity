@@ -145,6 +145,11 @@ vol-confscan(){
 	for pid in $(grep Pid $casefolder2/malfind.log | egrep -v "MsMpEng.exe|smartscreen|mmc.exe" |awk '{print$4}'| sort | uniq); do timeout 300 python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
 }
 
+vol-confscan2(){
+	for pid in $(awk '{print$3}' clamprocs.log 2>/dev/null); do timeout 300 python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
+}
+
+
 vol-sys(){
 	python $vol --profile=$pickedprofile -f $inspect moddump -D $casefolder2/moddump
 }
@@ -172,22 +177,24 @@ processresults(){
 	header >> calamity.log
 	echo -e "memory impected using the following profile: $pickedprofile" >> calamity.log
 	echo -e "$yellow===ClamAV results===$whi" | tee -a calamity.log
-	cat clamavresults.log | tee -a calamity.log
-	for i in $(cat clamavresults.log | cut -d . -f2 | uniq); do grep $i pslist.log >> $casefolder2/clamprocs.log;done
+	cat clamavresults.log 2>/dev/null| tee -a calamity.log
+	for i in $(cat clamavresults.log 2>/dev/null| cut -d . -f2 | uniq); do grep $i pslist.log >> $casefolder2/clamprocs.log;done
 	echo -e "$red===Identified Malicious Processes===$whi" |tee -a calamity.log
-	cat clamprocs.log | tee -a calamity.log
+	cat clamprocs.log 2>/dev/null | tee -a calamity.log
 	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
-	for i in $(awk '{print$3}' clamprocs.log); do grep $i netscan.log | tee -a calamity.log;done
+	for i in $(awk '{print$3}' clamprocs.log 2>/dev/null); do grep $i netscan.log | tee -a calamity.log;done
 	echo -e "$yellow===Loki Results===$whi" | tee -a calamity.log
-	grep FileScan lokiresults.log | tee -a calamity.log
+	grep FileScan lokiresults.log 2>/dev/null | tee -a calamity.log
 	for i in $(grep FileScan lokiresults.log | cut -d . -f2); do grep $i pslist.log >> lokiprocs.log;done
 	echo -e "$red===Identified Malicious Processes===$whi" | tee -a calamity.log
-	cat lokiprocs.log | tee -a calamity.log
+	cat lokiprocs.log 2>/dev/null | tee -a calamity.log
 	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
-	for i in $(awk '{print$3}' lokiprocs.log); do grep $i netscan.log | tee -a calamity.log;done
+	for i in $(awk '{print$3}' lokiprocs.log 2> /dev/null); do grep $i netscan.log | tee -a calamity.log;done
 	header >> calamity.log
-	vol-confscan
 	popd
+	echo -e "$yellow===Looking at Malfind Results for possible  malware configurations===$whi" | tee -a $casefolder2/calamity.log
+	vol-confscan | tee -a $casefolder2/calamity.log
+	vol-confscan2 | tee -a $casefolder2/calamity.log
 }
 
 ########################################################################
