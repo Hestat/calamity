@@ -54,6 +54,7 @@ helpmenu(){
 	echo -e " -p --profile provide the memory provile you want volatility to use"
 	echo -e " -s --scan will run all scans and prompt user as required"
 	echo -e " -q --quick will run a quick scan for malware, no user input required to complete"
+	echo -e " -c --config smae as quickscan but will try to extract malware configurations as well"
 	echo -e "\nExample:\ncalamity -f /home/user/memory.dmp -p Win10x64_10586 -s"
 	echo -e "\ncalamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan"
 	header
@@ -192,6 +193,9 @@ processresults(){
 	for i in $(awk '{print$3}' lokiprocs.log 2> /dev/null); do grep $i netscan.log | tee -a calamity.log;done
 	header >> calamity.log
 	popd
+}
+
+configscan(){
 	echo -e "$yellow===Looking at Malfind Results for possible  malware configurations===$whi" | tee -a $casefolder2/calamity.log
 	vol-confscan | tee -a $casefolder2/calamity.log
 	vol-confscan2 | tee -a $casefolder2/calamity.log
@@ -202,7 +206,7 @@ processresults(){
 ########################################################################
 
 # read the options
-TEMP=`getopt -o f:p:s::q::h:: --long filepath:,profile:,scan::,quick::,help:: -- "$@"`
+TEMP=`getopt -o f:p:s::q::c::h:: --long filepath:,profile:,scan::,quick::,config::,help:: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -236,6 +240,23 @@ while true; do
 			lokiscan
 			processresults
 			exit 0;;
+		-c|--config)
+			python $vol --profile=$pickedprofile -f $inspect pslist --output-file=/tmp/caltmp/pslist.log
+			python $vol --profile=$pickedprofile -f $inspect netscan --output-file=/tmp/caltmp/netscan.log
+			casefolder=calamity-quickscan$(date +%y%m%d-%H%M)
+			mkdir -p $HOME/$casefolder
+			casefolder2=$HOME/$casefolder
+			echo -e "$yellow\nWriting logs to $casefolder2...$whi"
+			mvlive
+			mkdir $casefolder2/malfind
+			vol-mal
+			echo -e "$yellow\nMalfind command complete scanning contents...$whi"
+			clam
+			lokiscan
+			processresults
+			configscan
+			exit 0;;
+
 
 		* ) break;;
 	esac
