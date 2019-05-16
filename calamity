@@ -54,7 +54,7 @@ helpmenu(){
 	echo -e " -p --profile provide the memory provile you want volatility to use"
 	echo -e " -s --scan will run all scans and prompt user as required"
 	echo -e " -q --quick will run a quick scan for malware, no user input required to complete"
-	echo -e " -c --config smae as quickscan but will try to extract malware configurations as well"
+	echo -e " -c --config same as quickscan but will try to extract malware configurations as well"
 	echo -e "\nExample:\ncalamity -f /home/user/memory.dmp -p Win10x64_10586 -s"
 	echo -e "\ncalamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan"
 	header
