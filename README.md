@@ -26,6 +26,9 @@ calamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan
 ================================================================================
 
 ```
+Full walkthrough and writeup:
+https://laskowski-tech.com/2019/05/18/calamity-a-volatility-script-to-aid-malware-triage/
+
 
 Original inspiration to Volatility Labs writeup in this article:
 https://volatility-labs.blogspot.com/2016/08/automating-detection-of-known-malware.html
