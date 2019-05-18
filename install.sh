@@ -87,8 +87,15 @@ fi
 if [[ -x $(which clamscan 2> /dev/null) ]]; then #clamav installed
 	echo -e "$green\n Found ClamAV installed continuing\n$whi"
 else
-	echo -e "$redbold Please install ClamAV first, then run this script again\n $whi"
-	exit 0
+	echo -e "$redbold Attempting to install ClamAV\n $whi"
+	if [[ -x $(which apt 2>dev/null) ]]; then #run apt
+		apt install clamav
+	elif [[ -x $(which yum 2>/dev/null) ]];then #run yum
+		yum install clamav
+	else
+		echo -e "$redbold Please install ClamAV first, then run this script again\n $whi"
+		exit 0
+	fi
 fi
 
 if [[ -e /opt/calamity/Loki ]]; then #Loki installed run update
