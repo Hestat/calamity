@@ -1,6 +1,6 @@
 #
-# This Docker image encapsulates the Volatility Framework (version 2.5) by The 
-# Volatility Foundation from http://www.volatilityfoundation.org/#!releases/component_71401
+# This Docker image encapsulates Calamity A Tool to Automate Memory Analysis using Volatility  
+# Thanks to remnux as this Dockerfile is based off their Volatility Dockerfile
 #
 # To run this image after installing Docker, use the following command:
 # sudo docker run --rm -it -v ~/memdumps:/home/nonroot/memdumps remnux/volatility bash
