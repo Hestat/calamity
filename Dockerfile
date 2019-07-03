@@ -3,7 +3,7 @@
 # Thanks to remnux as this Dockerfile is based off their Volatility Dockerfile
 #
 # To run this image after installing Docker, use the following command:
-# sudo docker run --rm -it -v ~/memdumps:/home/nonroot/memdumps remnux/volatility bash
+# sudo docker run --rm -it -v ~/memdumps:/home/nonroot/memdumps hestat/calamity bash
 #
 # Before running Volatility, create the ~/memdumps directory and make it world-accessible
 # (“chmod a+xwr").
