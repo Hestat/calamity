@@ -37,3 +37,25 @@ Which led me to write up my version:
 https://laskowski-tech.com/2019/02/18/volatility-workflow-for-basic-incident-response/
 
 Which led to this project. Good Hunting.
+
+Install instructions:
+
+On base system (has been tested for Ubuntu, Kali)
+
+```
+git clone https://github.com/Hestat/calamity.git
+cd calamity
+sudo ./install.sh
+```
+
+Docker option:
+
+```
+docker pull hestat/calamity
+
+docker run --rm -it -v ~/memory-dumps:/home/nonroot/memdumps hestat/calamity:latest bash
+```
+
+The /memory-dumps folder is where the memory images reside on the host OS, you will be dropped into a bash shell in the home directory of the nonroot user with a folder called memdumps which is mapped to the folder on the host OS. 
+
+
