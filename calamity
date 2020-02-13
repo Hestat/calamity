@@ -50,11 +50,11 @@ helpmenu(){
 	echo -e "$green\nA script to assist in processing forensic RAM captures for$red malware triage$whi\n"
 	echo -e "Run the script with no options and it will run in guided mode prompting the\nuser to choose options as required"
 	echo -e "\nIf you already know the correct volatility memory profile you can use the\nfollowing options"
-	echo -e " -f --filepath provide the complete filepath to the RAM memory dump"
-	echo -e " -p --profile provide the memory provile you want volatility to use"
-	echo -e " -s --scan will run all scans and prompt user as required"
-	echo -e " -q --quick will run a quick scan for malware, no user input required to complete"
-	echo -e " -c --config same as quickscan but will try to extract malware configurations as well"
+	echo -e " -f, --filepath  provide the complete filepath to the RAM memory dump"
+	echo -e " -p, --profile   provide the memory profile you want volatility to use"
+	echo -e " -s, --scan      will run all scans and prompt user as required"
+	echo -e " -q, --quick     will run a quick scan for malware, no user input required to complete"
+	echo -e " -c, --config    same as quickscan but will try to extract malware configurations as well"
 	echo -e "\nExample:\ncalamity -f /home/user/memory.dmp -p Win10x64_10586 -s"
 	echo -e "\ncalamity --fullpath /home/user/memory.dmp --profile Win10x64_10586 --scan"
 	header
@@ -176,7 +176,7 @@ processresults(){
 	pushd $casefolder2
 	touch calamity.log
 	header >> calamity.log
-	echo -e "memory impected using the following profile: $pickedprofile" >> calamity.log
+	echo -e "memory inspected using the following profile: $pickedprofile" >> calamity.log
 	echo -e "$yellow===ClamAV results===$whi" | tee -a calamity.log
 	cat clamavresults.log 2>/dev/null| tee -a calamity.log
 	for i in $(cat clamavresults.log 2>/dev/null| cut -d . -f2 | uniq); do grep $i pslist.log >> $casefolder2/clamprocs.log;done
