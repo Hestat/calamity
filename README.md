@@ -12,11 +12,11 @@ user to choose options as required
 
 If you already know the correct volatility memory profile you can use the
 following options
- -f --filepath provide the complete filepath to the RAM memory dump
- -p --profile provide the memory provile you want volatility to use
- -s --scan will run all scans and prompt user as required
- -q --quick will run a quick scan for malware, no user input required to complete
- -c --config same as quickscan but will try to extract malware configurations as well
+ -f, --filepath  provide the complete filepath to the RAM memory dump
+ -p, --profile   provide the memory profile you want volatility to use
+ -s, --scan      will run all scans and prompt user as required
+ -q, --quick     will run a quick scan for malware, no user input required to complete
+ -c, --config    same as quickscan but will try to extract malware configurations as well
 
 Example:
 calamity -f /home/user/memory.dmp -p Win10x64_10586 -s
