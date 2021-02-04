@@ -101,6 +101,7 @@ yesno; if [ $decision = 1 ]; then
 	mvlive
 	mkdir $casefolder2/malfind
 	vol-mal
+	vol-cmd
 	echo -e "$yellow\nMalfind command complete scanning contents...$whi"
 	clam
 	lokiscan
@@ -124,6 +125,7 @@ yesno; if [ $decision = 1 ];then
 	       mkdir $casefolder2/dlldump
 	       mkdir $casefolder2/moddump
 		vol-mal
+		vol-cmd
 		vol-dll
 		vol-sys
 		echo -e "$yellow File dumps from image complete, starting scan"
@@ -150,6 +152,9 @@ vol-confscan2(){
 	for pid in $(awk '{print$3}' clamprocs.log 2>/dev/null); do timeout 300 python $vol --profile=$pickedprofile -f $inspect malconfscan -p $pid;done
 }
 
+vol-cmd(){
+	python $vol --profile=$pickedprofile -f $inspect cmdline --output-file=$casefolder2/commandline.log
+}
 
 vol-sys(){
 	python $vol --profile=$pickedprofile -f $inspect moddump -D $casefolder2/moddump
@@ -191,6 +196,9 @@ processresults(){
 	cat lokiprocs.log 2>/dev/null | tee -a calamity.log
 	echo -e "$red===Suspect Network Traffic from malicious Processes===$whi" | tee -a calamity.log
 	for i in $(awk '{print$3}' lokiprocs.log 2> /dev/null); do grep $i netscan.log | tee -a calamity.log;done
+	header >> calamity.log
+	echo -e "$red===Suspicious Command Line Processes===$whi" | tee -a calamity.log
+	egrep -i -A 1 -B 2  "SQB|-NoP|-NonI|-w Hidden" commandline.log | tee -a calamity.log
 	header >> calamity.log
 	popd
 }
@@ -235,6 +243,7 @@ while true; do
 			mvlive
 			mkdir $casefolder2/malfind
 			vol-mal
+			vol-cmd
 			echo -e "$yellow\nMalfind command complete scanning contents...$whi"
 			clam
 			lokiscan
@@ -250,6 +259,7 @@ while true; do
 			mvlive
 			mkdir $casefolder2/malfind
 			vol-mal
+			vol-cmd
 			echo -e "$yellow\nMalfind command complete scanning contents...$whi"
 			clam
 			lokiscan
